@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+  build:
+    commands:
+      # Package Lambda functions
+      cd ../lambda_function_1 && zip -r ../lambda_function_1.zip *
+      cd ../lambda_function_2 && zip -r ../lambda_function_2.zip *
+
+artifacts:
+  files:
+    - lambda_function_1.zip
+    - lambda_function_2.zip
