@@ -79,14 +79,16 @@ $(document).ready(function () {
     searchPhotosButton.addEventListener('click', function () {
 
         async function fetchImages() {
+            console.log(inputSearchQuery.value)
             var params = {
                 'q': inputSearchQuery.value
             };
             try {
                 const response = await sdk.searchGet(params, {}, {});
-                testArr = ["https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg", "https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg", "https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg"]
-                // for (const imageUrl of response['data']['data']) {
-                for (const imageUrl of testArr) {
+                // console.log(response);
+                // testArr = ["https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg", "https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg", "https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg"]
+                for (const imageUrl of response['data']['data']) {
+                // for (const imageUrl of testArr) {
                     const imageResponse = await fetch(imageUrl);
                     if (!imageResponse.ok) {
                         throw new Error('Network response was not ok.');
@@ -104,14 +106,3 @@ $(document).ready(function () {
     });
 
 });
-
- // try {
-            //     const response = await fetch('https://pictures-assignment2.s3.amazonaws.com/1679631501092cat4.jpeg');
-            //     if (!response.ok) {
-            //         throw new Error('Network response was not ok.');
-            //     }
-            //     const text = await response.text();
-            //     catImage.src = text;
-            // } catch (error) {
-            //     console.error('Error fetching image:', error);
-            // }
