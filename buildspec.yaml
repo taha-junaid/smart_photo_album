@@ -7,7 +7,7 @@ phases:
     commands:
       - echo "Zipping lambda functions from gtihub..."
       - zip -r9 lf1.zip lambda_function_1.py
-      - zip -r9 lf2.zip lambda_function_1.py
+      - zip -r9 lf2.zip lambda_function_2.py
   post_build:
     commands:
       - echo "Updating lambda Functions..."
