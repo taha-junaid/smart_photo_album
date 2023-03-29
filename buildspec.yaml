@@ -1,16 +1,16 @@
 version: 0.2
-
 phases:
   install:
     runtime-versions:
       python: 3.9
   build:
     commands:
-      # Package Lambda functions
-      cd ../lambda_function_1.py && zip -r ../lambda_function_1.zip *
-      cd ../lambda_function_2.py && zip -r ../lambda_function_2.zip *
-
-artifacts:
-  files:
-    - lambda_function_1.zip
-    - lambda_function_2.zip
+      - echo "Zipping lambda functions from gtihub..."
+      - zip -r9 lf1.zip lambda_function_1.py
+      - zip -r9 lf2.zip lambda_function_1.py
+  post_build:
+    commands:
+      - echo "Updating lambda Functions..."
+      - aws lambda update-function-code --function-name lf1-assignment-2 --zip-file fileb://lf1.zip
+      - aws lambda update-function-code --function-name lf2-assignment-2 --zip-file fileb://lf2.zip
+      - echo "DONE!!"
