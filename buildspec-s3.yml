@@ -1,0 +1,6 @@
+version: 0.2
+phases:
+  post_build:
+    commands:
+      - echo "Updating files in the S3 bucket..."
+      - aws s3 sync ./ s3://smart-photos-album-app --exclude "*" --include "sdk/**" --include "index.html" --include "index.js" --include "index.css" --include "index.js" --include "aws-sdk.min.js"
