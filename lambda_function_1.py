@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     
     indexObj = {"objectKey": KeyName,"bucket":BucketName,"createdTimestamp":timestamp,"labels":labels}
     
-    url = "https://search-pictures-t6qyfsrwuavky5fac4hs4wmrpq.us-east-1.es.amazonaws.com/picturess/0"
+    url = "https://search-pictures-t6qyfsrwuavky5fac4hs4wmrpq.us-east-1.es.amazonaws.com/newpictures/0"
     
     #url = "https://search-photoboot-53tyon3nsbikh7e7qkyc26ivzm.us-west-2.es.amazonaws.com/photos/_doc"
    
@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     
     #r = requests.post(url, data=json.dumps(indexObj).encode("utf-8"), headers=headers)
     
-    #r = requests.post(url, data=json.dumps(indexObj).encode("utf-8"), headers=headers,auth=('Harish2023', 'Winwin2023$'))
+    r = requests.post(url, data=json.dumps(indexObj).encode("utf-8"), headers=headers,auth=('Harish2023', 'Winwin2023$'))
     
     # print(r.text)
     
