@@ -1,16 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
 Resources:
+  #S3 bucket for frontend
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: spa-frontend183541
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'PublicReadGetObject'
+            Effect: 'Allow'
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+            Resource: !Join ['', ['arn:aws:s3:::', 'spa-frontend183541', '/*']]
+  #S3 Bucket to store uploaded pictures  
+  S3Bucket2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: pictures
+  #API GATEWAY
   ApiGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: smartPhotosAlbum
-
   ApiGatewayResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId: !Ref ApiGateway
       PathPart: "search"
       ParentId: !GetAtt ApiGateway.RootResourceId
-
   ApiGatewayMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -21,7 +48,7 @@ Resources:
       Integration:
         Type: AWS
         IntegrationHttpMethod: POST
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LF2.Arn}/invocations
         RequestTemplates:
           application/json: '{"q": "$input.params(''q'')"}'
         IntegrationResponses:
@@ -33,29 +60,369 @@ Resources:
       MethodResponses:
       - ResponseModels:
           application/json: "Empty"
-        StatusCode: 200
-
-  LambdaFunction:
+        StatusCode: 200 
+  ApiGatewayResource2:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        RestApiId: !Ref ApiGateway
+        PathPart: "search"
+        ParentId: !GetAtt ApiGateway.RootResourceId
+    ApiGatewayBucketResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        RestApiId: !Ref ApiGateway
+        PathPart: "{bucket}"
+        ParentId: !Ref ApiGatewayResource2
+    ApiGatewayFileResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        RestApiId: !Ref ApiGateway
+        PathPart: "{filename}"
+        ParentId: !Ref ApiGatewayBucketResource
+    ApiGatewayPutMethod:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: PUT
+        ResourceId: !Ref ApiGatewayFileResource
+        RestApiId: !Ref ApiGateway
+        AuthorizationType: NONE
+        Integration:
+          Type: AWS
+          IntegrationHttpMethod: PUT
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:s3:path/{bucket}/{filename}"
+          RequestParameters:
+            integration.request.header.x-amz-meta-customLabels: "'x-amz-meta-customLabels'"
+        MethodResponses:
+          - ResponseModels:
+              application/json: "Empty"
+            StatusCode: 200
+ #LF2
+  LF2:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: spalambdabucket
         S3Key: lambda_function_2.zip
       Handler: lambda_function_2.lambda_handler
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: python3.9
-
-  LambdaExecutionRole:
+      Role: !GetAtt LambdaExecutionRole2.Arn
+      Runtime: python3.9  
+  LambdaExecutionRole2:
     Type: AWS::IAM::Role
+    Properties:
+      RoleName: my-lambda-execution-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                Resource: "*"
+        - PolicyName: api-gateway
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - execute-api:Invoke
+                  - execute-api:ManageConnections
+                Resource: "*"
+        - PolicyName: additional-permissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:DescribeAlarmsForMetric
+                  - kms:DescribeKey
+                  - kms:ListAliases
+                  - lambda:GetPolicy
+                  - lambda:ListFunctions
+                  - lex:*
+                  - polly:DescribeVoices
+                  - polly:SynthesizeSpeech
+                  - kendra:ListIndices
+                  - iam:ListRoles
+                  - s3:ListAllMyBuckets
+                  - logs:DescribeLogGroups
+                  - s3:GetBucketLocation
+                  - lambda:AddPermission
+                  - lambda:RemovePermission
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                Resource:
+                  - arn:aws:iam::*:role/aws-service-role/lex.amazonaws.com/AWSServiceRoleForLexBots
+                  - arn:aws:iam::*:role/aws-service-role/channels.lex.amazonaws.com/AWSServiceRoleForLexChannels
+                  - arn:aws:iam::*:role/aws-service-role/lexv2.amazonaws.com/AWSServiceRoleForLexV2Bots*
+                  - arn:aws:iam::*:role/aws-service-role/channels.lexv2.amazonaws.com/AWSServiceRoleForLexV2Channels*
+              - Effect: Allow
+                Action:
+                  - iam:CreateServiceLinkedRole
+                Resource:
+                  - arn:aws:iam::*:role/aws-service-role/lex.amazonaws.com/AWSServiceRoleForLexBots
+                Condition:
+                  StringEquals:
+                    iam:AWSServiceName: "lex.amazonaws.com"
+ # LF1
+  LF1:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: spalambdabucket
+        S3Key: lambda_function_1.zip
+      Handler: lambda_function_1.lambda_handler
+      Role: !GetAtt LambdaExecutionRole1.Arn
+      Runtime: python3.9
+  LambdaExecutionRole1:
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+      - PolicyName: lambda-s3-access
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
           - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+            - 's3:GetObject'
+            Resource:
+            - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket2, '/*']]
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: '*'
+      - PolicyName: LambdaCloudWatchLogsPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: arn:aws:logs:us-east-1:713647610890:log-group:/aws/lambda/lf1-assignment-2:*
+      - PolicyName: LambdaS3GetObjectPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: arn:aws:s3:::*
+      - PolicyName: LambdaRekognitionPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - rekognition:*
+              Resource: "*"
+  S3BucketLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref LF1
+      Action: 'lambda:InvokeFunction'
+      Principal: s3.amazonaws.com
+      SourceArn: !Join ['', ['arn:aws:s3:::', !Ref S3Bucket2]]
+  S3BucketEvent:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      Bucket: pictures
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: 's3:ObjectCreated:*'
+          Function: !GetAtt LF1.Arn
+  CodeBuildServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codebuild.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "MyCodeBuildPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogStream"
+                Resource: 
+                  - "arn:aws:logs:*:*:log-group:/aws/codebuild/MyCodeBuildProject1:*"
+                  - "arn:aws:logs:*:*:log-group:/aws/codebuild/MyCodeBuildProject2:*"
+  CodePipelineServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "MyCodePipelineServiceRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codepipeline.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "MyCodePipelinePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+  # Code Pipelines for frontend deployment
+  MyCodeBuildProject1:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: "MyCodeBuildProject1"
+      Description: "Builds my static website from GitHub"
+      ServiceRole: !GetAtt [CodeBuildServiceRole, Arn]
+      Artifacts:
+        Type: "CODEPIPELINE"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/standard:4.0"
+        Type: "LINUX_CONTAINER"
+      Source:
+        Type: "CODEPIPELINE"
+        BuildSpec: "buildspec-s3.yml"
+  MyCodePipeline1:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: "P1"
+      RoleArn: !GetAtt [CodePipelineServiceRole, Arn]
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "GitHubSource"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "ThirdParty"
+                Version: "1"
+                Provider: "GitHub"
+              OutputArtifacts:
+                - Name: "SourceArtifact"
+              Configuration:
+                Owner: taha-junaid
+                Repo: smart_photo_album
+                Branch: main
+                OAuthToken: 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
+        - Name: "Build"
+          Actions:
+            - Name: "CodeBuild"
+              ActionTypeId:
+                Category: "Build"
+                Owner: "AWS"
+                Version: "1"
+                Provider: "CodeBuild"
+              InputArtifacts:
+                - Name: "SourceArtifact"
+              OutputArtifacts:
+                - Name: "BuildArtifact"
+              Configuration:
+                ProjectName: !Ref MyCodeBuildProject1
+      ArtifactStore:
+        Type: "S3"
+        Location: cfartifactsstore
+  #Code Pipeline For lambda function deployments
+  MyCodeBuildProject2:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: "MyCodeBuildProject2"
+      Description: "Deploys my lambda functions"
+      ServiceRole: !GetAtt [CodeBuildServiceRole, Arn]
+      Artifacts:
+        Type: "CODEPIPELINE"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/standard:4.0"
+        Type: "LINUX_CONTAINER"
+      Source:
+        Type: "CODEPIPELINE"
+        BuildSpec: "buildspec.yml"
+  MyCodePipeline2:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: "P1"
+      RoleArn: !GetAtt [CodePipelineServiceRole, Arn]
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "GitHubSource"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "ThirdParty"
+                Version: "1"
+                Provider: "GitHub"
+              OutputArtifacts:
+                - Name: "SourceArtifact"
+              Configuration:
+                Owner: taha-junaid
+                Repo: smart_photo_album
+                Branch: main
+                OAuthToken: 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
+        - Name: "Build"
+          Actions:
+            - Name: "CodeBuild"
+              ActionTypeId:
+                Category: "Build"
+                Owner: "AWS"
+                Version: "1"
+                Provider: "CodeBuild"
+              InputArtifacts:
+                - Name: "SourceArtifact"
+              OutputArtifacts:
+                - Name: "BuildArtifact"
+              Configuration:
+                ProjectName: !Ref MyCodeBuildProject2
+      ArtifactStore:
+        Type: "S3"
+        Location: cfartifactsstore
+Outputs:
+  MyCodePipelineUrl1:
+    Value: !Sub "https://console.aws.amazon.com/codesuite/codepipeline/pipelines/${MyCodePipeline1}/view?region=${AWS::Region}"
+    Description: "The URL of the CodePipeline pipeline for frontend" 
+  MyCodePipelineUrl2:
+    Value: !Sub "https://console.aws.amazon.com/codesuite/codepipeline/pipelines/${MyCodePipeline2}/view?region=${AWS::Region}"
+    Description: "The URL of the CodePipeline pipeline for lambda functions" 
+  S3BucketURL:
+    Description: "URL for the S3 bucket hosting the static website"
+    Value: !Join ['', ['http://', !Ref S3Bucket, '.s3-website-', !Ref 'AWS::Region', '.amazonaws.com']]
