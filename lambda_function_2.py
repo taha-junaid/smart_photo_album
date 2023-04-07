@@ -10,7 +10,7 @@ import requests
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
+#MODIFIED
 headers = { "Content-Type": "application/json" }
 host = "https://search-pictures-t6qyfsrwuavky5fac4hs4wmrpq.us-east-1.es.amazonaws.com/newpictures/0"
 region = 'us-east-1'
