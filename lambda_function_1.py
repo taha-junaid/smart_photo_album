@@ -22,7 +22,10 @@ def lambda_handler(event, context):
     s3 = boto3.client('s3')
     s3obj = s3.get_object(Bucket=BucketName, Key=KeyName)
 
-    customlabels = s3obj['ResponseMetadata']['HTTPHeaders']['x-amz-meta-customlabels'].split(',')
+    if 'x-amz-meta-customlabels' in s3obj['ResponseMetadata']['HTTPHeaders']:
+        customlabels = s3obj['ResponseMetadata']['HTTPHeaders']['x-amz-meta-customlabels'].split(',')
+    else:
+        customlabels = []
 
     base64_image_binary = s3obj['Body'].read() #this contains data:image/jpeg;base64, 
     base64_image_string_only_data = base64_image_binary.decode('utf-8').split(',')[1]
