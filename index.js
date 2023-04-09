@@ -77,7 +77,7 @@ $(document).ready(function () {
     var searchResultsDiv = document.getElementById('searchResults');
 
     searchPhotosButton.addEventListener('click', function () {
-        
+        searchResultsDiv.innerHTML = '';
         async function fetchImages() {
             console.log(inputSearchQuery.value)
             var params = {
@@ -95,7 +95,6 @@ $(document).ready(function () {
                     }
                     const img = document.createElement('img');
                     img.src = await imageResponse.text();
-                    searchResultsDiv.innerHTML = '';
                     searchResultsDiv.appendChild(img);
                 }
             } catch (error) {
