@@ -95,7 +95,9 @@ $(document).ready(function () {
                     }
                     const img = document.createElement('img');
                     img.src = await imageResponse.text();
-                    img.height = "100px";
+                    img.onload = function() {
+                        img.height = "100px";
+                    };
                     searchResultsDiv.appendChild(img);
                 }
             } catch (error) {
