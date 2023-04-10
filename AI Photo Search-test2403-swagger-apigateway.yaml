@@ -1,0 +1,172 @@
+---
+swagger: "2.0"
+info:
+  description: "AI Photo Search application, built during the Cloud and Big Data course\
+    \ at Columbia University."
+  version: "1.0.0"
+  title: "AI Photo Search"
+host: "qzk8kr5ly2.execute-api.us-east-1.amazonaws.com"
+basePath: "/test2403"
+schemes:
+- "https"
+paths:
+  /search:
+    get:
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "q"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:713647610890:function:lf2-assignment-2/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\n     \"q\": \"$input.params('q')\"\n}"
+        passthroughBehavior: "when_no_templates"
+        contentHandling: "CONVERT_TO_TEXT"
+    options:
+      consumes:
+      - "application/json"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        type: "mock"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+  /{bucket}/{filename}:
+    put:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "filename"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "bucket"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "x-amz-meta-customLabels"
+        in: "header"
+        required: false
+        type: "string"
+      - in: "body"
+        name: "ImageUploadRequest"
+        required: true
+        schema:
+          $ref: "#/definitions/ImageUploadRequest"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        credentials: "arn:aws:iam::713647610890:role/Api-gateway-putmethod-assignment2"
+        httpMethod: "PUT"
+        uri: "arn:aws:apigateway:us-east-1:s3:path/{bucket}/{key}"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "#set($origin = $input.params('Origin'))\n#set($method\
+                \ = $input.params('Access-Control-Request-Method'))\n#set($headers\
+                \ = $input.params('Access-Control-Request-Headers'))\n#set($allowedMethods\
+                \ = \"POST, OPTIONS\")\n#set($allowedHeaders = \"Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token\"\
+                )\n\n#if($method == \"OPTIONS\")\n  #set($context.responseOverride.header.Access-Control-Allow-Origin\
+                \ = $origin)\n  #set($context.responseOverride.header.Access-Control-Allow-Methods\
+                \ = $allowedMethods)\n  #set($context.responseOverride.header.Access-Control-Allow-Headers\
+                \ = $allowedHeaders)\n#end\n"
+        requestParameters:
+          integration.request.header.x-amz-meta-customLabels: "method.request.header.x-amz-meta-customLabels"
+          integration.request.path.key: "method.request.path.filename"
+          integration.request.path.bucket: "method.request.path.bucket"
+        passthroughBehavior: "when_no_templates"
+    options:
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "bucket"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "filename"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        type: "mock"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-amz-meta-customLabels'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        passthroughBehavior: "when_no_match"
+definitions:
+  ImageUploadRequest:
+    type: "object"
+    required:
+    - "contentType"
+    - "filename"
+    properties:
+      filename:
+        type: "string"
+      contentType:
+        type: "string"
+x-amazon-apigateway-gateway-responses:
+  DEFAULT_4XX:
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Methods: "'OPTIONS,PUT'"
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+      gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Content-Encoding,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+x-amazon-apigateway-binary-media-types:
+- "image/jpeg"
