@@ -137,7 +137,7 @@ Resources:
                 - logs:CreateLogGroup
                 - logs:CreateLogStream
                 - logs:PutLogEvents
-              Resource: arn:aws:logs:us-east-1:713647610890:log-group:/aws/lambda/LF1:*
+              Resource: arn:aws:logs:us-east-1:<account id>:log-group:/aws/lambda/LF1:*
       - PolicyName: LambdaS3GetObjectPolicy
         PolicyDocument:
           Version: 2012-10-17
@@ -280,7 +280,7 @@ Resources:
                 Principal:
                   AWS: "*"
                 Action: "es:*"
-                Resource: "arn:aws:es:us-east-1:176402949356:domain/photosindex/*"
+                Resource: "arn:aws:es:us-east-1:<accountid>:domain/photosindex/*"
           EncryptionAtRestOptions: 
                 Enabled: true
           NodeToNodeEncryptionOptions: 
